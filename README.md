@@ -1,8 +1,8 @@
-# 🔱 Monitor Soundstage
+# 🔱 SurroundSoundMonitorSetup
 
 <div align="center">
 
-![Monitor Soundstage 5.1 Architecture](assets/monitor-soundstage-5-1.jpg)
+![SurroundSoundMonitorSetup Architecture](assets/monitor-soundstage-5-1.jpg)
 
 **Automatic Multi-Monitor Audio Setup & Spatial Soundstage Calibrator for Linux (PipeWire / PulseAudio / WirePlumber)**
 
@@ -10,18 +10,16 @@
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20PipeWire%20%7C%20PulseAudio-purple.svg)]()
 [![Created By](https://img.shields.io/badge/Created%20By-JTG%20Systems-gold.svg)](https://jtgsystems.com)
 
-*Turn your multi-monitor battlestation into a cohesive **Spatial Surround Sound (5.1 / 7.1)** or **Unified Wide Stereo (Wall of Sound)** acoustic array in seconds using your screens as speakers.*
+*Turn your multi-monitor computer battlestation into a cohesive **Spatial Surround Sound (5.1 / 7.1)** or **Unified Wide Stereo (Wall of Sound)** acoustic array in seconds using your screens as speakers.*
 
 </div>
 
 ---
 
-## ✨ Why Monitor Soundstage?
+## ✨ Features
 
-Most desktop battlestations feature 2 to 6 monitors with built-in speakers that sit unused or play in isolated stereo pairs. **Monitor Soundstage** unifies all monitor hardware audio endpoints into a coordinated spatial soundstage directly from PipeWire and PulseAudio.
-
-- 🖥️ **Zero-Config Display & Audio Discovery**: Automatically discovers all connected HDMI/DisplayPort audio endpoints across NVIDIA GPUs, AMD iGPUs/dGPUs, and Intel graphics.
-- 🎚️ **Automatic Hardware Level Calibration**: Locks individual monitor physical speakers (e.g. 90%) while keeping master volume comfortable (e.g. 20%).
+- 🖥️ **Zero-Config Display & Audio Topology Discovery**: Auto-detects all connected HDMI/DisplayPort audio endpoints across NVIDIA GPUs, AMD iGPUs/dGPUs, and Intel graphics, analyzing the physical screen coordinates ($X, Y$).
+- 🎚️ **Automatic Hardware Level Calibration**: Balances individual monitor physical speakers (e.g. 90%) while keeping master volume comfortable (e.g. 20%).
 - 🔊 **Instant 1-2-3 Sound Profiles**:
   - `[1]`: **Unified Wide Stereo (Wall of Sound)** — Parallel synchronized wide stereo across all monitors with balanced center fill.
   - `[2]`: **5.1 Spatial Surround Sound** — Discrete channel routing (Center dialogue on middle/top displays, bass on 34" ultrawides, surround wings on outer screens).
@@ -36,8 +34,8 @@ Most desktop battlestations feature 2 to 6 monitors with built-in speakers that 
 
 ```bash
 # Clone the repository
-git clone https://github.com/jtgsystems/monitor-soundstage.git
-cd monitor-soundstage
+git clone https://github.com/jtgsystems/SurroundSoundMonitorSetup.git
+cd SurroundSoundMonitorSetup
 
 # Install locally
 pip install -e .
@@ -45,25 +43,27 @@ pip install -e .
 
 ### Run Interactive Menu:
 ```bash
-monitor-soundstage
+surround-sound-monitor-setup
+# or short alias:
+ssms
 ```
 
 ### CLI Quick Commands:
 ```bash
-# Auto-detect and configure 5.1 surround sound
-monitor-soundstage auto
+# Auto-detect your workstation setup and instantly apply the optimal profile
+ssms auto
 
 # Switch to Wide Stereo profile
-monitor-soundstage stereo
+ssms stereo
 
 # Switch to 5.1 Surround profile
-monitor-soundstage surround
+ssms surround
 
 # Run 1v1 Audio Comparison Battle
-monitor-soundstage battle
+ssms battle
 
-# List detected monitor audio sinks
-monitor-soundstage list
+# List detected monitor audio endpoints and assigned spatial roles
+ssms list
 ```
 
 ---

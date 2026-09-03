@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "monitor-soundstage"
+name = "surround-sound-monitor-setup"
 version = "1.0.0"
 description = "Automatic Multi-Monitor Audio Setup & Spatial Soundstage Calibrator for Linux"
 readme = "README.md"
@@ -15,4 +15,6 @@ dependencies = [
 ]
 
 [project.scripts]
+surround-sound-monitor-setup = "monitor_soundstage.cli:main"
+ssms = "monitor_soundstage.cli:main"
 monitor-soundstage = "monitor_soundstage.cli:main"
