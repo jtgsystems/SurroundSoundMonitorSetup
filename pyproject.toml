@@ -5,14 +5,35 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "surround-sound-monitor-setup"
 version = "1.0.0"
-description = "Automatic Multi-Monitor Audio Setup & Spatial Soundstage Calibrator for Linux"
+description = "Turn multi-monitor battlestations into 5.1/7.1 Spatial Surround Sound or Unified Wide Stereo arrays using computer screens as speakers. Automatic PipeWire & PulseAudio calibrator for Linux."
 readme = "README.md"
-authors = [{ name = "JTG Systems" }]
+authors = [{ name = "JTG Systems", email = "jtgsystems@gmail.com" }]
 license = { text = "MIT" }
+keywords = [
+    "pipewire", "pulseaudio", "surround-sound", "multi-monitor",
+    "spatial-audio", "linux-audio", "wireplumber", "battlestation",
+    "soundstage", "combine-sinks", "hdmi-audio", "displayport-audio",
+    "jtgsystems", "5.1-surround", "7.1-surround"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: System :: Hardware"
+]
 dependencies = [
     "rich>=13.0.0",
     "numpy>=1.20.0"
 ]
+
+[project.urls]
+Homepage = "https://jtgsystems.com"
+Repository = "https://github.com/jtgsystems/SurroundSoundMonitorSetup"
+"Bug Tracker" = "https://github.com/jtgsystems/SurroundSoundMonitorSetup/issues"
 
 [project.scripts]
 surround-sound-monitor-setup = "monitor_soundstage.cli:main"
