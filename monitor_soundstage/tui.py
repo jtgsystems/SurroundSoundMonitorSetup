@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import subprocess
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -20,7 +21,7 @@ console = Console()
 
 def render_banner():
     console.print(Panel.fit(
-        "[bold cyan]🔱 MONITOR SOUNDSTAGE CALIBRATOR (SOTA 2026)[/bold cyan]\n"
+        "[bold cyan]🔱 SURROUND SOUND MONITOR SETUP (SOTA 2026)[/bold cyan]\n"
         "[italic white]Auto-Detecting Multi-Monitor Layout & Synthesizing Spatial Soundstage[/italic white]",
         border_style="cyan"
     ))
@@ -52,7 +53,7 @@ def display_monitors(monitors, optimal_profile: str):
         border_style="gold1"
     ))
 
-def run_1v1_battle(sinks):
+def run_1v1_battle(sinks, current_vol: int = 20):
     console.print("\n[bold yellow]⚔️  STARTING 1v1 AUDIO BATTLE: WIDE STEREO vs 5.1 SURROUND ⚔️[/bold yellow]\n")
     
     intro1 = "/tmp/tui_intro1.wav"
@@ -64,8 +65,8 @@ def run_1v1_battle(sinks):
     surround_wav = generate_surround_5_1_demo()
     
     # 1. Round 1
-    console.print("[bold cyan]>>> [ROUND 1] Playing Wide Stereo (All Monitors Unified)...[/bold cyan]")
-    SoundProfileManager.create_wide_stereo_profile(sinks, 20)
+    console.print(f"[bold cyan]>>> [ROUND 1] Playing Wide Stereo (All Monitors Unified at {current_vol}%)...[/bold cyan]")
+    SoundProfileManager.create_wide_stereo_profile(sinks, current_vol)
     play_audio("All_Monitors", intro1)
     play_audio("All_Monitors", stereo_wav)
     
@@ -73,8 +74,8 @@ def run_1v1_battle(sinks):
     time.sleep(2)
     
     # 2. Round 2
-    console.print("[bold magenta]>>> [ROUND 2] Playing 5.1 Spatial Surround Sound...[/bold magenta]")
-    SoundProfileManager.create_5_1_surround_profile(sinks, 20)
+    console.print(f"[bold magenta]>>> [ROUND 2] Playing 5.1 Spatial Surround Sound at {current_vol}%...[/bold magenta]")
+    SoundProfileManager.create_5_1_surround_profile(sinks, current_vol)
     play_audio("Surround_5_1_Monitors", intro2)
     play_audio("Surround_5_1_Monitors", surround_wav)
     
@@ -94,17 +95,19 @@ def interactive_menu():
     display_monitors(monitors, optimal_profile)
     sinks = [m.sink_name for m in monitors]
     
-    # Ensure hardware volumes are at 90%
+    # Ensure hardware monitor speakers are calibrated at 90%
     SoundProfileManager.apply_hardware_volume(sinks, 90)
+    current_vol = 20
     
     while True:
         console.print(Panel(
-            "[bold white]Choose an Action / Sound Profile:[/bold white]\n\n"
+            f"[bold white]Choose an Action / Sound Profile (Current Master Volume: [bold cyan]{current_vol}%[/bold cyan]):[/bold white]\n\n"
             "  [bold green][a][/bold green]  [white]Load [bold]Optimal Auto-Detected Profile[/bold] (Recommended)[/white]\n"
             "  [bold cyan][1][/bold cyan]  [white]Activate [bold]Unified Wide Stereo[/bold] (Wall of Sound)[/white]\n"
             "  [bold magenta][2][/bold magenta]  [white]Activate [bold]5.1 Spatial Surround Sound[/bold] (Directional Stems)[/white]\n"
             "  [bold blue][3][/bold blue]  [white]Activate [bold]7.1 Immersive Surround[/bold] (For 4+ Displays)[/white]\n"
-            "  [bold yellow][b][/bold yellow]  [white]Play [bold]1v1 Audio Battle[/bold] (A/B Test Stereo vs Surround)[/white]\n"
+            "  [bold yellow][v][/bold yellow]  [white]Adjust [bold]Master Volume[/bold] (Type any %)[/white]\n"
+            "  [bold orange1][b][/bold orange1]  [white]Play [bold]1v1 Audio Battle[/bold] (A/B Test Stereo vs Surround)[/white]\n"
             "  [bold bright_cyan][y][/bold bright_cyan]  [white]Download & Play [bold]YouTube Open Source / CC Audio[/bold][/white]\n"
             "  [bold red][s][/bold red]  [white]Save Current Profile & Set as [bold]Permanent Default[/bold][/white]\n"
             "  [bold white][q][/bold white]  [dim]Quit[/dim]",
@@ -115,29 +118,38 @@ def interactive_menu():
         choice = Prompt.ask("[bold cyan]Enter choice[/bold cyan]", default="a").strip().lower()
         
         if choice == "a":
-            if optimal_profile == "surround_5_1" or optimal_profile == "surround_7_1":
-                console.print("[magenta]Applying Auto-Detected 5.1 Spatial Surround Sound...[/magenta]")
-                SoundProfileManager.create_5_1_surround_profile(sinks, 20)
-                save_pipewire_configuration(sinks, "surround_5_1")
+            if optimal_profile in ("surround_5_1", "surround_7_1"):
+                console.print(f"[magenta]Applying Auto-Detected 5.1 Spatial Surround Sound ({current_vol}% volume)...[/magenta]")
+                SoundProfileManager.create_5_1_surround_profile(sinks, current_vol)
+                save_pipewire_configuration(sinks, "surround_5_1", current_vol)
             else:
-                console.print("[cyan]Applying Auto-Detected Wide Stereo Soundstage...[/cyan]")
-                SoundProfileManager.create_wide_stereo_profile(sinks, 20)
-                save_pipewire_configuration(sinks, "stereo")
-            console.print("[bold green]✓ Optimal profile loaded, calibrated at 20% master, and saved![/bold green]")
+                console.print(f"[cyan]Applying Auto-Detected Wide Stereo Soundstage ({current_vol}% volume)...[/cyan]")
+                SoundProfileManager.create_wide_stereo_profile(sinks, current_vol)
+                save_pipewire_configuration(sinks, "stereo", current_vol)
+            console.print(f"[bold green]✓ Optimal profile loaded, initialized at {current_vol}%, and saved![/bold green]")
         elif choice == "1":
-            console.print("[green]Activating Unified Wide Stereo (20% Master Volume)...[/green]")
-            SoundProfileManager.create_wide_stereo_profile(sinks, 20)
+            console.print(f"[green]Activating Unified Wide Stereo ({current_vol}% Master Volume)...[/green]")
+            SoundProfileManager.create_wide_stereo_profile(sinks, current_vol)
             console.print("[bold green]✓ Wide Stereo is now active![/bold green]")
         elif choice == "2":
-            console.print("[magenta]Activating 5.1 Spatial Surround Sound (20% Master Volume)...[/magenta]")
-            SoundProfileManager.create_5_1_surround_profile(sinks, 20)
+            console.print(f"[magenta]Activating 5.1 Spatial Surround Sound ({current_vol}% Master Volume)...[/magenta]")
+            SoundProfileManager.create_5_1_surround_profile(sinks, current_vol)
             console.print("[bold magenta]✓ 5.1 Surround Sound is now active![/bold magenta]")
         elif choice == "3":
-            console.print("[blue]Activating 7.1 Immersive Surround (20% Master Volume)...[/blue]")
-            SoundProfileManager.create_7_1_surround_profile(sinks, 20)
+            console.print(f"[blue]Activating 7.1 Immersive Surround ({current_vol}% Master Volume)...[/blue]")
+            SoundProfileManager.create_7_1_surround_profile(sinks, current_vol)
             console.print("[bold blue]✓ 7.1 Surround Sound is now active![/bold blue]")
+        elif choice == "v":
+            new_v = Prompt.ask("[bold yellow]Enter desired master volume percentage (0-150)[/bold yellow]", default=str(current_vol))
+            try:
+                current_vol = int(new_v)
+                for s in ["Surround_5_1_Monitors", "All_Monitors"]:
+                    subprocess.run(["pactl", "set-sink-volume", s, f"{current_vol}%"], capture_output=True)
+                console.print(f"[bold green]✓ Master volume adjusted to {current_vol}%![/bold green]")
+            except ValueError:
+                console.print("[red]Invalid number entered.[/red]")
         elif choice == "b":
-            run_1v1_battle(sinks)
+            run_1v1_battle(sinks, current_vol)
         elif choice == "y":
             console.print("\n[bold yellow]Available Royalty-Free / Creative Commons YouTube Audio Tracks:[/bold yellow]")
             for k, item in CURATED_AUDIO_TRACKS.items():
@@ -153,8 +165,8 @@ def interactive_menu():
             else:
                 console.print("[red]Failed to download audio from YouTube. Check URL or connection.[/red]")
         elif choice == "s":
-            save_pipewire_configuration(sinks, "surround_5_1")
-            console.print("[bold green]✓ Configuration saved to ~/.config/pipewire/ and ~/.config/autostart![/bold green]")
+            save_pipewire_configuration(sinks, "surround_5_1", current_vol)
+            console.print(f"[bold green]✓ Configuration saved to ~/.config/pipewire/ and ~/.config/autostart at {current_vol}% master![/bold green]")
         elif choice == "q":
-            console.print("[cyan]Exiting Monitor Soundstage. Enjoy the sound![/cyan]")
+            console.print("[cyan]Exiting Surround Sound Monitor Setup. Enjoy your soundstage![/cyan]")
             break
