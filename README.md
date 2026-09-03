@@ -99,6 +99,27 @@ ssms list
 
 ---
 
+## 🔍 Keyword Cloud & Search Index (Tags & Queries)
+
+<details>
+<summary><strong>Expand Exhaustive Search Index & Compatibility Keywords</strong></summary>
+
+### 🏷️ Primary Keywords & Search Queries:
+`multi monitor audio setup` · `use monitor speakers as surround sound` · `combine all monitor speakers linux` · `play audio through all monitors simultaneously` · `pipewire multi monitor audio` · `pulseaudio combine sinks multiple monitors` · `5.1 surround sound using monitor speakers` · `7.1 surround sound multi display` · `battlestation surround sound without speakers` · `dual monitor audio splitter linux` · `triple monitor surround sound setup` · `5 monitor audio wall of sound` · `simultaneous hdmi audio output linux` · `play sound on two monitors at the same time` · `combine hdmi and displayport audio linux` · `nvidia pro-audio multi hdmi output pipewire` · `wireplumber combine multiple audio sinks` · `spatial audio multi screen battlestation` · `monitor speakers spatial soundstage calibrator` · `linux virtual 5.1 surround sound sink` · `linux virtual 7.1 surround sound sink` · `display sound merger` · `multi screen sound fusion` · `screen surround sound linux` · `jtgsystems surround sound monitor setup` · `ssms audio tool` · `pipewire module-combine-sink automatic configuration`
+
+### 💻 Supported Display Servers & Desktop Environments:
+`KDE Plasma 6 Wayland kscreen-doctor audio` · `Hyprland hyprctl monitor audio setup` · `Sway swaymsg audio sink merger` · `GNOME Wayland simultaneous audio output` · `X11 xrandr multi monitor sound synchronization` · `Arch Linux pipewire audio setup` · `Ubuntu Debian Fedora OpenSUSE Linux Mint Pop OS audio soundstage`
+
+### 🎮 Gaming & Workstation Audio Profiles:
+`gaming battlestation audio optimization` · `curved ultrawide monitor bass audio routing` · `vertical monitor center dialogue speaker` · `overhead top monitor spatial audio height channel` · `simultaneous sound card combine sinks` · `lossless 48000Hz 24-bit 32-bit float audio fusion` · `zero latency monitor speaker synchronization` · `pipewire loopback spatial matrix` · `virtual surround sound headphones and monitors`
+
+### 🛠️ Hardware & Audio Standards:
+`NVIDIA GeForce RTX 4090 4080 4070 4060 HDMI Audio` · `AMD Radeon RX 7900 7800 6800 RDNA iGPU Raphael Audio` · `Intel Arc Iris Xe Display Audio` · `Samsung Odyssey C34 C49 Ultrawide Built-in Speakers` · `LG UltraGear UltraWide 34WP 29WP Built-in Speakers` · `Dell UltraSharp Alienware Display Audio` · `ASUS ROG Swift TUF Gaming Monitor Speakers` · `BenQ Mobiuz Acer Predator AOC MSI Gaming Display Audio` · `LPCM 5.1 Surround Sound` · `LPCM 7.1 Surround Sound` · `Dolby Digital 5.1 Channel Mapping` · `ALSA ELD EDID Audio Parser`
+
+</details>
+
+---
+
 ## 📜 License
 
 MIT License © 2026 [JTG Systems](https://jtgsystems.com).
