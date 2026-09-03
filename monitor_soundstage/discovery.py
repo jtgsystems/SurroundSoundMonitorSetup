@@ -17,7 +17,7 @@ class MonitorDevice:
     pos_y: int = 0
     width: int = 0
     height: int = 0
-    spatial_role: str = "Front-Center"  # FL, FR, FC, LFE, RL, RR, etc.
+    spatial_role: str = "Front-Center"
 
 def run_cmd(cmd: List[str]) -> str:
     try:
@@ -27,7 +27,7 @@ def run_cmd(cmd: List[str]) -> str:
         return ""
 
 def ensure_pro_audio_profiles():
-    """Ensure multi-output GPU cards (like NVIDIA/AMD) have pro-audio enabled so all HDMI/DP sinks exist."""
+    """Ensure multi-output GPU cards have pro-audio enabled so all HDMI/DP sinks are available."""
     cards_out = run_cmd(["pactl", "list", "cards"])
     for block in cards_out.split("Card #"):
         if not block.strip():
@@ -35,7 +35,9 @@ def ensure_pro_audio_profiles():
         name_match = re.search(r"Name:\s+(\S+)", block)
         if name_match:
             card_name = name_match.group(1)
-            if ("01_00.1" in card_name or "12_00.1" in card_name) and "pro-audio: Pro Audio" in block:
+            # If card has HDMI/DisplayPort endpoints and pro-audio profile is available
+            has_hdmi = "hdmi" in block.lower() or "displayport" in block.lower() or "video-display" in block.lower()
+            if has_hdmi and "pro-audio: Pro Audio" in block:
                 if "Active Profile: pro-audio" not in block:
                     subprocess.run(["pactl", "set-card-profile", card_name, "pro-audio"], capture_output=True)
 
@@ -86,7 +88,6 @@ def get_screen_geometries() -> Dict[str, Dict]:
     try:
         out = run_cmd(["xrandr", "--query"])
         for line in out.splitlines():
-            # Example: DP-3 connected primary 3440x1440+4520+1080
             match = re.search(r"^(\S+)\s+connected\s+(?:primary\s+)?(\d+)x(\d+)\+(\d+)\+(\d+)", line)
             if match:
                 name, w, h, x, y = match.groups()
@@ -111,7 +112,6 @@ def classify_spatial_roles(monitors: List[MonitorDevice]) -> str:
         monitors[0].spatial_role = "Stereo Full-Range"
         return "stereo"
     elif count == 2:
-        # Sort left to right
         sorted_m = sorted(monitors, key=lambda m: m.pos_x)
         sorted_m[0].spatial_role = "Front-Left"
         sorted_m[1].spatial_role = "Front-Right"
@@ -126,18 +126,16 @@ def classify_spatial_roles(monitors: List[MonitorDevice]) -> str:
         # 4, 5, or 6+ monitors -> 5.1 / 7.1 Spatial Soundstage
         min_x = min(m.pos_x for m in monitors)
         max_x = max(m.pos_x + (m.width if m.width else 1920) for m in monitors)
-        span_x = max_x - min_x
+        span_x = max(max_x - min_x, 1)
         mid_x = min_x + span_x / 2.0
         
         min_y = min(m.pos_y for m in monitors)
-        
-        # Sort left to right
         sorted_m = sorted(monitors, key=lambda m: m.pos_x)
         
         for m in sorted_m:
             center_dist = (m.pos_x + (m.width / 2.0 if m.width else 960)) - mid_x
             
-            # If screen is vertically higher than the rest
+            # Elevated / Top screens
             if m.pos_y == min_y and len([o for o in monitors if o.pos_y > min_y]) >= 2:
                 m.spatial_role = "Top Height / Center Dialogue"
             elif abs(center_dist) < (span_x * 0.18):
@@ -174,10 +172,10 @@ def discover_monitors() -> Tuple[List[MonitorDevice], str]:
                 eld_idx = int(dev_m.group(1)) if dev_m else 0
                 
                 mon_name_m = re.search(r"monitor_name\s+([^\n\r]+)", content)
-                mon_name = mon_name_m.group(1).strip() if mon_name_m else "HDMI Monitor"
+                mon_name = mon_name_m.group(1).strip() if mon_name_m else "Display Audio"
                 
                 conn_type_m = re.search(r"connection_type\s+([^\n\r]+)", content)
-                conn_type = conn_type_m.group(1).strip() if conn_type_m else "HDMI"
+                conn_type = conn_type_m.group(1).strip() if conn_type_m else "HDMI/DP"
                 
                 eld_map[(card_num, eld_idx)] = {
                     "name": mon_name,
@@ -199,14 +197,18 @@ def discover_monitors() -> Tuple[List[MonitorDevice], str]:
             continue
         sink_name = name_m.group(1)
         
+        # Only include hardware HDMI / DisplayPort video display audio sinks
         if "alsa_output" not in sink_name:
-            continue
-        if "12_00.6" in sink_name or "HyperX" in sink_name or "SoloCast" in sink_name:
             continue
             
         desc_m = re.search(r"Description:\s+([^\n\r]+)", block)
         desc = desc_m.group(1).strip() if desc_m else sink_name
         
+        # Exclude internal analog soundcards, USB microphones, headsets, and webcams
+        desc_lower = desc.lower()
+        if any(w in desc_lower for w in ["analog", "mic", "headset", "headphone", "usb audio", "hyperx", "solocast", "realtek"]):
+            continue
+            
         card_id = 0
         dev_id = 0
         
@@ -226,7 +228,6 @@ def discover_monitors() -> Tuple[List[MonitorDevice], str]:
         if matched_mon:
             display_name = f"{matched_mon['name']} ({desc})"
             
-        # Match geometry if connector name matches
         geom = next((g for name, g in geom_map.items() if name.lower() in sink_name.lower() or name.lower() in desc.lower()), {})
         
         mon = MonitorDevice(

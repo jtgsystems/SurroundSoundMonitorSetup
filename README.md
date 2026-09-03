@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20PipeWire%20%7C%20PulseAudio-purple.svg)]()
 [![Created By](https://img.shields.io/badge/Created%20By-JTG%20Systems-gold.svg)](https://jtgsystems.com)
 
-*Turn your multi-monitor computer battlestation into a cohesive **Spatial Surround Sound (5.1 / 7.1)** or **Unified Wide Stereo (Wall of Sound)** acoustic array in seconds using your screens as speakers.*
+*Turn any multi-monitor computer workstation (2, 3, 4, 5, or 6+ displays) into a cohesive **Spatial Surround Sound (5.1 / 7.1)** or **Unified Wide Stereo (Wall of Sound)** acoustic array in seconds using your screens as speakers.*
 
 </div>
 
@@ -18,11 +18,11 @@
 
 ## ✨ Features
 
-- 🖥️ **Zero-Config Display & Audio Topology Discovery**: Auto-detects all connected HDMI/DisplayPort audio endpoints across NVIDIA GPUs, AMD iGPUs/dGPUs, and Intel graphics, analyzing the physical screen coordinates ($X, Y$).
-- 🎚️ **Automatic Hardware Level Calibration**: Balances individual monitor physical speakers (e.g. 90%) while keeping master volume comfortable (e.g. 20%).
-- 🔊 **Instant 1-2-3 Sound Profiles**:
-  - `[1]`: **Unified Wide Stereo (Wall of Sound)** — Parallel synchronized wide stereo across all monitors with balanced center fill.
-  - `[2]`: **5.1 Spatial Surround Sound** — Discrete channel routing (Center dialogue on middle/top displays, bass on 34" ultrawides, surround wings on outer screens).
+- 🖥️ **Universal Display & Audio Topology Discovery**: Auto-detects all connected HDMI and DisplayPort audio endpoints across any GPU configuration (NVIDIA, AMD, Intel) and analyzes the physical display coordinates ($X, Y$).
+- 🎚️ **Automatic Hardware Level Calibration**: Safely balances individual monitor physical speakers (e.g. 90%) while keeping master volume comfortable (default: 20%, fully customizable).
+- 🔊 **Adaptive Multi-Monitor Sound Profiles**:
+  - `[1]`: **Unified Wide Stereo (Wall of Sound)** — Synchronizes all monitor speakers in parallel stereo with balanced center fill.
+  - `[2]`: **5.1 Spatial Surround Sound** — Discrete channel routing (Center dialogue on middle/top screens, bass on primary displays, surround wings on outer screens).
   - `[3]`: **7.1 Immersive Surround** — Multi-channel surround for 4+ screen battlestations.
 - ⚔️ **Interactive 1v1 Audio Battle**: Built-in soundcheck and A/B test suite with synthesized multi-track stems and voice channel checks.
 - 🌐 **YouTube Open Source / CC Audio Downloader**: Pulls Creative Commons surround sound reference tests via `yt-dlp`.
@@ -50,8 +50,11 @@ ssms
 
 ### CLI Quick Commands:
 ```bash
-# Auto-detect your workstation setup and instantly apply the optimal profile
+# Auto-detect any workstation setup and instantly apply the optimal profile
 ssms auto
+
+# Set master soundstage volume to any percentage (e.g., 25%)
+ssms volume 25
 
 # Switch to Wide Stereo profile
 ssms stereo
@@ -68,17 +71,32 @@ ssms list
 
 ---
 
-## 📐 Spatial Layout Architecture
+## 📐 Universal Spatial Topology Support
 
+`SurroundSoundMonitorSetup` automatically classifies and adapts to any workstation geometry:
+
+### 1. Dual Monitor Setup (2 Displays)
 ```
-                                [Top Ultrawide: LG 34"]
-                                (Center Height / Dialogue)
+[Left Display]              [Right Display]
+ (Front-Left)                 (Front-Right)
+```
 
-                              [Center Vertical: LG 29"]
-                                 (Center Vocal Anchor)
+### 2. Triple Monitor Setup (3 Displays)
+```
+[Left Display]          [Center Display]         [Right Display]
+ (Front-Left)           (Center Dialogue)         (Front-Right)
+```
 
-[Bottom-Left: Samsung 34"]                                 [Bottom-Right: Samsung 34"]           [Far-Right: Dell 27"]
-   (Front Left + Bass)                                        (Front Right + Bass)             (Rear / Right Surround)
+### 3. Multi-Monitor Battlestation (4 to 6+ Displays)
+```
+                                   [Top / Elevated Display]
+                                  (Center Height / Dialogue)
+
+                                    [Center / Main Display]
+                                     (Center Vocal Anchor)
+
+[Left Display / Wing]                                             [Right Display / Wing]             [Far Wing Display]
+ (Front Left + Bass)                                               (Front Right + Bass)             (Rear / Side Surround)
 ```
 
 ---
@@ -114,7 +132,7 @@ ssms list
 `gaming battlestation audio optimization` · `curved ultrawide monitor bass audio routing` · `vertical monitor center dialogue speaker` · `overhead top monitor spatial audio height channel` · `simultaneous sound card combine sinks` · `lossless 48000Hz 24-bit 32-bit float audio fusion` · `zero latency monitor speaker synchronization` · `pipewire loopback spatial matrix` · `virtual surround sound headphones and monitors`
 
 ### 🛠️ Hardware & Audio Standards:
-`NVIDIA GeForce RTX 4090 4080 4070 4060 HDMI Audio` · `AMD Radeon RX 7900 7800 6800 RDNA iGPU Raphael Audio` · `Intel Arc Iris Xe Display Audio` · `Samsung Odyssey C34 C49 Ultrawide Built-in Speakers` · `LG UltraGear UltraWide 34WP 29WP Built-in Speakers` · `Dell UltraSharp Alienware Display Audio` · `ASUS ROG Swift TUF Gaming Monitor Speakers` · `BenQ Mobiuz Acer Predator AOC MSI Gaming Display Audio` · `LPCM 5.1 Surround Sound` · `LPCM 7.1 Surround Sound` · `Dolby Digital 5.1 Channel Mapping` · `ALSA ELD EDID Audio Parser`
+`NVIDIA GeForce RTX HDMI DisplayPort Audio` · `AMD Radeon RX RDNA iGPU Display Audio` · `Intel Arc Iris Xe Display Audio` · `Ultrawide Curved Gaming Monitor Built-in Speakers` · `Dual Triple Quad Monitor Audio Synchronization` · `LPCM 5.1 Surround Sound` · `LPCM 7.1 Surround Sound` · `Dolby Digital 5.1 Channel Mapping` · `ALSA ELD EDID Audio Parser`
 
 </details>
 
