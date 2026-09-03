@@ -4,7 +4,7 @@ import json
 import glob
 import subprocess
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 
 @dataclass
 class MonitorDevice:
@@ -17,6 +17,7 @@ class MonitorDevice:
     pos_y: int = 0
     width: int = 0
     height: int = 0
+    spatial_role: str = "Front-Center"  # FL, FR, FC, LFE, RL, RR, etc.
 
 def run_cmd(cmd: List[str]) -> str:
     try:
@@ -26,7 +27,7 @@ def run_cmd(cmd: List[str]) -> str:
         return ""
 
 def ensure_pro_audio_profiles():
-    """Ensure multi-output GPU cards (like NVIDIA) have pro-audio enabled so all HDMI/DP sinks exist."""
+    """Ensure multi-output GPU cards (like NVIDIA/AMD) have pro-audio enabled so all HDMI/DP sinks exist."""
     cards_out = run_cmd(["pactl", "list", "cards"])
     for block in cards_out.split("Card #"):
         if not block.strip():
@@ -34,14 +35,15 @@ def ensure_pro_audio_profiles():
         name_match = re.search(r"Name:\s+(\S+)", block)
         if name_match:
             card_name = name_match.group(1)
-            # Only enable pro-audio on GPU HDMI audio devices (NVIDIA/AMD GPU)
             if ("01_00.1" in card_name or "12_00.1" in card_name) and "pro-audio: Pro Audio" in block:
                 if "Active Profile: pro-audio" not in block:
                     subprocess.run(["pactl", "set-card-profile", card_name, "pro-audio"], capture_output=True)
 
-def get_kscreen_geometries() -> Dict[str, Dict]:
-    """Retrieve visual position and resolutions of monitors from kscreen-doctor."""
+def get_screen_geometries() -> Dict[str, Dict]:
+    """Retrieve visual coordinates and resolutions across KDE, Hyprland, Sway, GNOME, or X11."""
     geom_map = {}
+    
+    # 1. Try KDE kscreen-doctor
     try:
         out = run_cmd(["kscreen-doctor", "-j"])
         if out:
@@ -57,16 +59,106 @@ def get_kscreen_geometries() -> Dict[str, Dict]:
                         "w": size.get("width", 0),
                         "h": size.get("height", 0)
                     }
+            if geom_map:
+                return geom_map
     except Exception:
         pass
+
+    # 2. Try Hyprland (hyprctl)
+    try:
+        out = run_cmd(["hyprctl", "monitors", "-j"])
+        if out:
+            data = json.loads(out)
+            for m in data:
+                name = m.get("name")
+                geom_map[name] = {
+                    "x": m.get("x", 0),
+                    "y": m.get("y", 0),
+                    "w": m.get("width", 0),
+                    "h": m.get("height", 0)
+                }
+            if geom_map:
+                return geom_map
+    except Exception:
+        pass
+
+    # 3. Try xrandr
+    try:
+        out = run_cmd(["xrandr", "--query"])
+        for line in out.splitlines():
+            # Example: DP-3 connected primary 3440x1440+4520+1080
+            match = re.search(r"^(\S+)\s+connected\s+(?:primary\s+)?(\d+)x(\d+)\+(\d+)\+(\d+)", line)
+            if match:
+                name, w, h, x, y = match.groups()
+                geom_map[name] = {
+                    "x": int(x),
+                    "y": int(y),
+                    "w": int(w),
+                    "h": int(h)
+                }
+    except Exception:
+        pass
+
     return geom_map
 
-def discover_monitors() -> List[MonitorDevice]:
-    """Discover all connected monitors, their ALSA ELD descriptions, PipeWire sinks, and physical layout."""
+def classify_spatial_roles(monitors: List[MonitorDevice]) -> str:
+    """Analyze the multi-monitor coordinate bounding box and automatically assign spatial roles."""
+    if not monitors:
+        return "stereo"
+        
+    count = len(monitors)
+    if count == 1:
+        monitors[0].spatial_role = "Stereo Full-Range"
+        return "stereo"
+    elif count == 2:
+        # Sort left to right
+        sorted_m = sorted(monitors, key=lambda m: m.pos_x)
+        sorted_m[0].spatial_role = "Front-Left"
+        sorted_m[1].spatial_role = "Front-Right"
+        return "stereo_pair"
+    elif count == 3:
+        sorted_m = sorted(monitors, key=lambda m: m.pos_x)
+        sorted_m[0].spatial_role = "Front-Left"
+        sorted_m[1].spatial_role = "Center Dialogue"
+        sorted_m[2].spatial_role = "Front-Right"
+        return "surround_3_1"
+    else:
+        # 4, 5, or 6+ monitors -> 5.1 / 7.1 Spatial Soundstage
+        min_x = min(m.pos_x for m in monitors)
+        max_x = max(m.pos_x + (m.width if m.width else 1920) for m in monitors)
+        span_x = max_x - min_x
+        mid_x = min_x + span_x / 2.0
+        
+        min_y = min(m.pos_y for m in monitors)
+        
+        # Sort left to right
+        sorted_m = sorted(monitors, key=lambda m: m.pos_x)
+        
+        for m in sorted_m:
+            center_dist = (m.pos_x + (m.width / 2.0 if m.width else 960)) - mid_x
+            
+            # If screen is vertically higher than the rest
+            if m.pos_y == min_y and len([o for o in monitors if o.pos_y > min_y]) >= 2:
+                m.spatial_role = "Top Height / Center Dialogue"
+            elif abs(center_dist) < (span_x * 0.18):
+                m.spatial_role = "Center Vocal Anchor"
+            elif center_dist < - (span_x * 0.28):
+                m.spatial_role = "Front-Left + Bass"
+            elif center_dist > (span_x * 0.28):
+                m.spatial_role = "Rear / Right Surround Wing"
+            elif center_dist < 0:
+                m.spatial_role = "Front-Left Main"
+            else:
+                m.spatial_role = "Front-Right Main + Bass"
+                
+        return "surround_5_1" if count <= 5 else "surround_7_1"
+
+def discover_monitors() -> Tuple[List[MonitorDevice], str]:
+    """Discover all connected monitors, assign spatial roles based on desk layout, and determine optimal profile."""
     ensure_pro_audio_profiles()
-    geom_map = get_kscreen_geometries()
+    geom_map = get_screen_geometries()
     
-    # 1. Read ELD entries from /proc/asound/
+    # Read ELD entries
     eld_files = glob.glob("/proc/asound/card*/eld*")
     eld_map = {}
     
@@ -94,7 +186,6 @@ def discover_monitors() -> List[MonitorDevice]:
         except Exception:
             continue
 
-    # 2. Get active sinks from pactl
     sinks_out = run_cmd(["pactl", "list", "sinks"])
     sinks_blocks = sinks_out.split("Sink #")
     
@@ -108,10 +199,9 @@ def discover_monitors() -> List[MonitorDevice]:
             continue
         sink_name = name_m.group(1)
         
-        # We only want hardware HDMI / DP ALSA outputs from GPU devices (exclude motherboard analog)
         if "alsa_output" not in sink_name:
             continue
-        if "12_00.6" in sink_name or "HyperX" in sink_name:
+        if "12_00.6" in sink_name or "HyperX" in sink_name or "SoloCast" in sink_name:
             continue
             
         desc_m = re.search(r"Description:\s+([^\n\r]+)", block)
@@ -128,23 +218,29 @@ def discover_monitors() -> List[MonitorDevice]:
         if alsa_dev_m:
             dev_id = int(alsa_dev_m.group(1))
             
-        # Match with ELD
         matched_mon = eld_map.get((card_id, dev_id))
         if not matched_mon:
-            # Try finding any ELD for this card
             matched_mon = next((v for (c, d), v in eld_map.items() if c == card_id), None)
             
         display_name = desc
         if matched_mon:
             display_name = f"{matched_mon['name']} ({desc})"
             
+        # Match geometry if connector name matches
+        geom = next((g for name, g in geom_map.items() if name.lower() in sink_name.lower() or name.lower() in desc.lower()), {})
+        
         mon = MonitorDevice(
             display_name=display_name,
             connector=desc,
             card_id=card_id,
             device_id=dev_id,
-            sink_name=sink_name
+            sink_name=sink_name,
+            pos_x=geom.get("x", len(monitors) * 1920),
+            pos_y=geom.get("y", 0),
+            width=geom.get("w", 1920),
+            height=geom.get("h", 1080)
         )
         monitors.append(mon)
         
-    return monitors
+    optimal_profile = classify_spatial_roles(monitors)
+    return monitors, optimal_profile

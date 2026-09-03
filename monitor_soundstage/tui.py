@@ -21,20 +21,36 @@ console = Console()
 def render_banner():
     console.print(Panel.fit(
         "[bold cyan]🔱 MONITOR SOUNDSTAGE CALIBRATOR (SOTA 2026)[/bold cyan]\n"
-        "[italic white]Multi-Monitor Audio Fusion, Spatial Surround & Wide Soundstage for Linux[/italic white]",
+        "[italic white]Auto-Detecting Multi-Monitor Layout & Synthesizing Spatial Soundstage[/italic white]",
         border_style="cyan"
     ))
 
-def display_monitors(monitors):
-    table = Table(title="[bold green]Detected Monitor Audio Endpoints[/bold green]", border_style="blue")
+def display_monitors(monitors, optimal_profile: str):
+    table = Table(title=f"[bold green]Auto-Detected Workstation Topology ({len(monitors)} Displays)[/bold green]", border_style="blue")
     table.add_column("No.", style="cyan", justify="center")
     table.add_column("Display / Model", style="bold white")
-    table.add_column("Connection", style="yellow")
-    table.add_column("PipeWire Audio Sink", style="magenta")
+    table.add_column("Position (X, Y)", style="yellow", justify="center")
+    table.add_column("Auto-Assigned Spatial Role", style="bold green")
+    table.add_column("Hardware Sink", style="magenta")
     
     for idx, m in enumerate(monitors, 1):
-        table.add_row(str(idx), m.display_name, m.connector, m.sink_name)
+        pos_str = f"({m.pos_x}, {m.pos_y})"
+        table.add_row(str(idx), m.display_name, pos_str, m.spatial_role, m.sink_name)
     console.print(table)
+    
+    profile_names = {
+        "stereo": "Stereo Mode",
+        "stereo_pair": "Dual-Monitor Expanded Stereo",
+        "surround_3_1": "3.1 Front Soundstage",
+        "surround_5_1": "5.1 Spatial Surround Sound",
+        "surround_7_1": "7.1 Immersive Surround Sound"
+    }
+    rec_name = profile_names.get(optimal_profile, "5.1 Spatial Surround")
+    console.print(Panel(
+        f"[bold gold1]🎯 Optimal Detected Profile:[/bold gold1] [bold green]{rec_name}[/bold green]\n"
+        f"[dim white]Based on {len(monitors)} detected physical displays and their spatial desk placement.[/dim white]",
+        border_style="gold1"
+    ))
 
 def run_1v1_battle(sinks):
     console.print("\n[bold yellow]⚔️  STARTING 1v1 AUDIO BATTLE: WIDE STEREO vs 5.1 SURROUND ⚔️[/bold yellow]\n")
@@ -69,13 +85,13 @@ def run_1v1_battle(sinks):
 
 def interactive_menu():
     render_banner()
-    monitors = discover_monitors()
+    monitors, optimal_profile = discover_monitors()
     
     if not monitors:
         console.print("[bold red]No HDMI/DP monitor audio sinks detected.[/bold red]")
         return
         
-    display_monitors(monitors)
+    display_monitors(monitors, optimal_profile)
     sinks = [m.sink_name for m in monitors]
     
     # Ensure hardware volumes are at 90%
@@ -84,20 +100,31 @@ def interactive_menu():
     while True:
         console.print(Panel(
             "[bold white]Choose an Action / Sound Profile:[/bold white]\n\n"
+            "  [bold green][a][/bold green]  [white]Load [bold]Optimal Auto-Detected Profile[/bold] (Recommended)[/white]\n"
             "  [bold cyan][1][/bold cyan]  [white]Activate [bold]Unified Wide Stereo[/bold] (Wall of Sound)[/white]\n"
             "  [bold magenta][2][/bold magenta]  [white]Activate [bold]5.1 Spatial Surround Sound[/bold] (Directional Stems)[/white]\n"
             "  [bold blue][3][/bold blue]  [white]Activate [bold]7.1 Immersive Surround[/bold] (For 4+ Displays)[/white]\n"
             "  [bold yellow][b][/bold yellow]  [white]Play [bold]1v1 Audio Battle[/bold] (A/B Test Stereo vs Surround)[/white]\n"
-            "  [bold green][y][/bold green]  [white]Download & Play [bold]YouTube Open Source / CC Audio[/bold][/white]\n"
+            "  [bold bright_cyan][y][/bold bright_cyan]  [white]Download & Play [bold]YouTube Open Source / CC Audio[/bold][/white]\n"
             "  [bold red][s][/bold red]  [white]Save Current Profile & Set as [bold]Permanent Default[/bold][/white]\n"
             "  [bold white][q][/bold white]  [dim]Quit[/dim]",
             border_style="bright_blue",
             title="[bold yellow]Menu Controls[/bold yellow]"
         ))
         
-        choice = Prompt.ask("[bold cyan]Enter choice[/bold cyan]", default="2").strip().lower()
+        choice = Prompt.ask("[bold cyan]Enter choice[/bold cyan]", default="a").strip().lower()
         
-        if choice == "1":
+        if choice == "a":
+            if optimal_profile == "surround_5_1" or optimal_profile == "surround_7_1":
+                console.print("[magenta]Applying Auto-Detected 5.1 Spatial Surround Sound...[/magenta]")
+                SoundProfileManager.create_5_1_surround_profile(sinks, 20)
+                save_pipewire_configuration(sinks, "surround_5_1")
+            else:
+                console.print("[cyan]Applying Auto-Detected Wide Stereo Soundstage...[/cyan]")
+                SoundProfileManager.create_wide_stereo_profile(sinks, 20)
+                save_pipewire_configuration(sinks, "stereo")
+            console.print("[bold green]✓ Optimal profile loaded, calibrated at 20% master, and saved![/bold green]")
+        elif choice == "1":
             console.print("[green]Activating Unified Wide Stereo (20% Master Volume)...[/green]")
             SoundProfileManager.create_wide_stereo_profile(sinks, 20)
             console.print("[bold green]✓ Wide Stereo is now active![/bold green]")

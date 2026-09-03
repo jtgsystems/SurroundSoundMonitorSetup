@@ -6,9 +6,10 @@ import os
 
 class TestMonitorSoundstage(unittest.TestCase):
     def test_discovery(self):
-        monitors = discover_monitors()
+        monitors, optimal_profile = discover_monitors()
         self.assertIsInstance(monitors, list)
         self.assertGreater(len(monitors), 0)
+        self.assertIsInstance(optimal_profile, str)
         
     def test_synth_stereo(self):
         wav = generate_stereo_soundstage_demo(duration=1.0)
