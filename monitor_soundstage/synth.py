@@ -5,12 +5,19 @@ import subprocess
 import numpy as np
 from typing import Tuple
 
+def get_bundled_audio_path(filename: str) -> str:
+    """Check for bundled audio file in package directory or fallback."""
+    pkg_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidate = os.path.join(pkg_dir, "audio", filename)
+    if os.path.exists(candidate):
+        return candidate
+    return ""
+
 def generate_voice_intro(text: str, out_wav: str):
     """Generate spoken announcement using espeak-ng."""
     try:
         subprocess.run(["espeak-ng", "-w", out_wav, "-s", "150", text], capture_output=True, check=True)
     except Exception:
-        # Fallback to pure tone if espeak is unavailable
         sr = 48000
         t = np.linspace(0, 0.5, int(sr * 0.5), False)
         tone = (np.sin(2 * np.pi * 440 * t) * 0.3 * 32767).astype(np.int16)
@@ -21,7 +28,11 @@ def generate_voice_intro(text: str, out_wav: str):
             wf.writeframes(tone.tobytes())
 
 def generate_stereo_soundstage_demo(duration: float = 6.0, sample_rate: int = 48000) -> str:
-    """Generate lossless stereo soundstage demo WAV."""
+    """Load or generate lossless stereo soundstage demo WAV."""
+    bundled = get_bundled_audio_path("wide_stereo_soundstage_sweep.wav")
+    if bundled:
+        return bundled
+        
     t = np.linspace(0, duration, int(sample_rate * duration), False)
     pan = 0.5 * (1 + np.sin(2 * np.pi * 0.35 * t - np.pi/2))
     
@@ -44,10 +55,12 @@ def generate_stereo_soundstage_demo(duration: float = 6.0, sample_rate: int = 48
     return wav_path
 
 def generate_surround_5_1_demo(duration: float = 8.0, sample_rate: int = 48000) -> str:
-    """Generate lossless 6-channel 5.1 discrete surround demo WAV."""
+    """Load or generate lossless 6-channel 5.1 discrete surround demo WAV."""
+    bundled = get_bundled_audio_path("surround_5_1_cinematic_demo.wav")
+    if bundled:
+        return bundled
+        
     t = np.linspace(0, duration, int(sample_rate * duration), False)
-    
-    # 4 Chords: Am -> F -> C -> G
     chords = [
         {"root": 220.0, "notes": [220.0, 261.63, 329.63, 440.0]},
         {"root": 174.61, "notes": [174.61, 220.0, 261.63, 349.23]},
@@ -87,7 +100,6 @@ def generate_surround_5_1_demo(duration: float = 8.0, sample_rate: int = 48000) 
     shimmer_l = track_l * 0.6 * np.sin(2 * np.pi * 0.25 * t)
     shimmer_r = track_r * 0.6 * np.cos(2 * np.pi * 0.25 * t)
     
-    # 6 Channels: [FL, FR, FC, LFE, RL, RR]
     ch_fl = (track_l / (np.max(np.abs(track_l)) + 1e-6) * 0.7 * 32767).astype(np.int16)
     ch_fr = (track_r / (np.max(np.abs(track_r)) + 1e-6) * 0.7 * 32767).astype(np.int16)
     ch_fc = (lead / (np.max(np.abs(lead)) + 1e-6) * 0.8 * 32767).astype(np.int16)
