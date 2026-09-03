@@ -1,0 +1,2 @@
+[console_scripts]
+monitor-soundstage = monitor_soundstage.cli:main

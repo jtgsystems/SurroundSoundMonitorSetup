@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "monitor-soundstage"
+version = "1.0.0"
+description = "Automatic Multi-Monitor Audio Setup & Spatial Soundstage Calibrator for Linux"
+readme = "README.md"
+authors = [{ name = "JTG Systems" }]
+license = { text = "MIT" }
+dependencies = [
+    "rich>=13.0.0",
+    "numpy>=1.20.0"
+]
+
+[project.scripts]
+monitor-soundstage = "monitor_soundstage.cli:main"
